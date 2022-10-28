@@ -1,3 +1,9 @@
+/**
+* Add folder dynamicly
+* Add support for headers
+* Protect routes from spam
+*/
+
 // Deps //
 const { exec } = require("child_process");
 const express = require("express");
@@ -7,23 +13,26 @@ gatsbyWebhookHelper.use( express.json() );
 // Config //
 const WEBHOOK_PORT = 9000;
 var ongoing_process = false;
+const folder = "cd /var/www/html/ext_up_creilab_web;";
 
 // Gatsby Update/Re-build sequences //
 const cleanRebuildSequence = [
-    "npm run clean",
-    "gatsby build"
+    "yarn clean",
+    "yarn build",
+    "rsync -azP public/* public_html",
+//    "cd /var/www/html/ext_up_creilab_web; yarn build"
     // Add custom commands here
 ];
 const quickRebuildSequence = [
-    "gatsby build"
+    "cd /var/www/html/ext_up_creilab_web; yarn build"
     // Add custom commands here
 ];
 // You can also create your custom callback terminal sequences...
 
 // Routing (Gatsby Update/Re-build sequences) //
 // Default delay is 120 and 30s respectively = build will trigger only after inactivity for 2 minutes, to not to repeat the same thing multiple times.
-createGatsbyWebhook('/clean_gatsby_rebuild/', cleanRebuildSequence, 120000)
-createGatsbyWebhook('/quick_gatsby_rebuild/', quickRebuildSequence, 30000)
+createGatsbyWebhook('/clean_gatsby_rebuild/', cleanRebuildSequence, 1000)
+createGatsbyWebhook('/quick_gatsby_rebuild/', quickRebuildSequence, 300)
 // You can also create custom webhook callbacks with your custom sequences...
 
 // FUNCTIONS //
@@ -43,8 +52,8 @@ function createGatsbyWebhook(endpoint, sequence, delay = 15000){
             res.sendStatus( 200 );
         } else {
             console.log ('Sorry, already running a sequence. Try again in few minutes.');
-        }  
-    });   
+        }
+    });
 }
 
 /* FUNCTION: Run Terminal Sequence.
@@ -53,7 +62,7 @@ function createGatsbyWebhook(endpoint, sequence, delay = 15000){
 function runSequence (commands=false){
     if(commands === false) return false;
     var commandArr = [...commands];
-    let newCommand = commandArr[0];
+    let newCommand = folder + commandArr[0];
     commandArr.shift();
     console.log('Running "'+newCommand+'"');
     // Execute terminal command
